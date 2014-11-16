@@ -1,27 +1,24 @@
 /**
  * Module dependencies.
  */
+var settings = require('./config.js')
+    , path = require('path')
+    , fs = require('fs');
 
-var fs = require('fs');
-var path = require('path');
-var settings = require('./config.js');
+var express = require('express')
+  , app = express()
+  , server = require('http').createServer(app)
+  , io = require('socket.io').listen(server);
 
-var express = require('express');
-var app = express();
-var server = require('https').createServer({
-			key: fs.readFileSync(settings.key),
-			cert: fs.readFileSync(settings.cert),
-		}, app);
-var io = require('socket.io').listen(server);
+var spawn = require('child_process').spawn
+	, child_process = require('child_process')
+    , pty = require('pty.js');
 
-var spawn = require('child_process').spawn;
-var child_process = require('child_process');
-var pty = require('pty.js');
-
-var sqlite3 = require('sqlite3').verbose();
-var sessDb = new sqlite3.Database('./sessions.db');
-var userid = require('userid');
-var pam = require('authenticate-pam');
+var sqlite3 = require('sqlite3').verbose()
+	, sessDb = new sqlite3.Database('./sessions.db')
+	, userid = require('userid')
+	, pam = require('authenticate-pam');
+;
 
 sessDb.serialize(function() {
 	sessDb.run("CREATE TABLE if not exists sessions ( key text primary key, user text, age TIMESTAMP DEFAULT CURRENT_TIMESTAMP )");
@@ -36,11 +33,6 @@ app.use(express.bodyParser());
 app.use(express.methodOverride());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// development only
-if ('development' == app.get('env')) {
-  app.use(express.errorHandler());
-}
-
 //Routes
 app.get('/term.js', function (req, res) {
 	res.set('Content-Type', 'text/javascript;charset=utf-8');
@@ -48,8 +40,9 @@ app.get('/term.js', function (req, res) {
 });
 
 app.get('/jFresh.js', function (req, res) {
-	var tpls = fs.readdirSync(__dirname + '/tpls');
-    var data;
+	var tpls = fs.readdirSync(__dirname + '/tpls')
+		, data
+	;
 
 	res.set('Content-Type', 'text/javascript;charset=utf-8');
 
@@ -66,15 +59,16 @@ app.get('/jFresh.js', function (req, res) {
 		res.write("\r\n");
 	}
 
+
 	res.end();
 });
 
 app.get('/', function (req, res) {
-	var jFreshTag = '<!--JFRESH-->';
-	var indexTpl = fs.readFileSync(__dirname + '/public/start.html', 'utf-8');
-	var idxStart = indexTpl.indexOf(jFreshTag);
-	var tpls = fs.readdirSync(__dirname + '/tpls');
-	var data, dataWrap, ext;
+	var jFreshTag = '<!--JFRESH-->'
+		, indexTpl = fs.readFileSync(__dirname + '/public/start.html', 'utf-8')
+		, idxStart = indexTpl.indexOf(jFreshTag)
+		, tpls = fs.readdirSync(__dirname + '/tpls')
+		, data , dataWrap , ext;
 
 	res.set('Content-Type', 'text/html;charset=utf-8');
 	res.write( indexTpl.substr(0, idxStart) );
@@ -105,6 +99,7 @@ server.listen(app.get('port'), function(){
 
 var ss;
 
+
 function uuid(
   a                  // placeholder
 ){
@@ -125,6 +120,15 @@ function uuid(
         /[018]/g,    // zeroes, ones, and eights with
         uuid            // random hex digits
       )
+}
+
+//Run and pipe shell script output
+function run_shell(cmd, args, cb, end) {
+    var spawn = require('child_process').spawn,
+        child = spawn(cmd, args),
+        me = this;
+    child.stdout.on('data', function (buffer) { cb(me, buffer); });
+    child.stdout.on('end', end);
 }
 
 function on_user_login(socket,usr,uid) {
@@ -169,6 +173,7 @@ io.sockets.on('connection', function (socket) {
 	//we spawn a new child after socket login with user's crap and start routing from there...
 	var userid, uid;
 	console.log('New Websocket Connection started!');
+	//~ socket.emit('autherror', 'hello world');
 
 	socket.on("login", function(usr,pwd) {
 		if ( userid ) return;
@@ -202,5 +207,82 @@ io.sockets.on('connection', function (socket) {
 
 	});
 
+
 	return;
+	/*
+	socket.on("resize", function(data){
+		if ( !term ) return; //not yet open?
+		term.resize(data.cols, data.rows);
+	});
+
+	socket.on("data", function(data){
+		if ( !term ) return; //not yet open?
+		term.write(data);
+	});
+
+	socket.on("bash", function(data){
+		if ( term ) return; //already open?!
+		term =  pty.spawn('bash', [], {
+							name: 'xterm-color',
+							cols: 80,
+							rows: 30,
+							cwd: process.env.HOME,
+							env: process.env
+						});
+		term.on('data', function(data) {
+			socket.emit("data", data);
+		});
+ });
+
+ socket.on("screen", function(data){
+   socket.type = "screen";
+   ss = socket;
+   console.log("Screen ready...");
+ });
+ socket.on("remote", function(data){
+   socket.type = "remote";
+   console.log("Remote ready...");
+ });
+
+ socket.on("controll", function(data){
+	console.log(data);
+   if(socket.type === "remote"){
+
+     if(data.action === "tap"){
+         if(ss != undefined){
+            ss.emit("controlling", {action:"enter"});
+            }
+     }
+     else if(data.action === "swipeLeft"){
+      if(ss != undefined){
+          ss.emit("controlling", {action:"goLeft"});
+          }
+     }
+     else if(data.action === "swipeRight"){
+       if(ss != undefined){
+           ss.emit("controlling", {action:"goRight"});
+           }
+     }
+   }
+ });
+
+ socket.on("video", function(data){
+
+    if( data.action === "play"){
+    var id = data.video_id,
+         url = "http://www.youtube.com/watch?v="+id;
+
+    var runShell = new run_shell('youtube-dl',['-o','%(id)s.%(ext)s','-f','/18/22',url],
+        function (me, buffer) {
+            me.stdout += buffer.toString();
+            socket.emit("loading",{output: me.stdout});
+            console.log(me.stdout);
+         },
+        function () {
+            //child = spawn('omxplayer',[id+'.mp4']);
+            omx.start(id+'.mp4');
+        });
+    }
+
+ });*/
 });
