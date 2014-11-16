@@ -1,26 +1,27 @@
 /**
  * Module dependencies.
  */
-var settings = require('./config.js')
 
-var express = require('express')
-  , app = express()  
-	, fs = require('fs')
-  , server = require('https').createServer({
-			//~ ca: fs.readFileSync(settings.ca),
+var fs = require('fs');
+var path = require('path');
+var settings = require('./config.js');
+
+var express = require('express');
+var app = express();
+var server = require('https').createServer({
 			key: fs.readFileSync(settings.key),
 			cert: fs.readFileSync(settings.cert),
-		}, app)
-  , path = require('path')
-  , io = require('socket.io').listen(server)
-  , spawn = require('child_process').spawn
-	, pty = require('pty.js')
-	, child_process = require('child_process')
-	, sqlite3 = require('sqlite3').verbose()
-	, sessDb = new sqlite3.Database('./sessions.db')
-	, userid = require('userid')
-	, pam = require('authenticate-pam')
-;
+		}, app);
+var io = require('socket.io').listen(server);
+
+var spawn = require('child_process').spawn;
+var child_process = require('child_process');
+var pty = require('pty.js');
+
+var sqlite3 = require('sqlite3').verbose();
+var sessDb = new sqlite3.Database('./sessions.db');
+var userid = require('userid');
+var pam = require('authenticate-pam');
 
 sessDb.serialize(function() {
 	sessDb.run("CREATE TABLE if not exists sessions ( key text primary key, user text, age TIMESTAMP DEFAULT CURRENT_TIMESTAMP )");
@@ -47,68 +48,53 @@ app.get('/term.js', function (req, res) {
 });
 
 app.get('/jFresh.js', function (req, res) {
-	var tpls = fs.readdirSync(__dirname + '/tpls')
-		, data
-	;
-	
+	var tpls = fs.readdirSync(__dirname + '/tpls');
+    var data;
+
 	res.set('Content-Type', 'text/javascript;charset=utf-8');
-	
+
 	data = fs.readFileSync(__dirname+'/jFresh-client-engine.js', 'utf-8');
 	res.write(data);
 	res.write("\r\n");
-	
+
 	for(var i=0; i<tpls.length; i++) {
 		ext = path.extname(tpls[i]);
 		if ( ext != '.js' ) continue;
-		
+
 		data = fs.readFileSync(__dirname + '/tpls/' + tpls[i]);
 		res.write(data);
 		res.write("\r\n");
 	}
 
-	
 	res.end();
 });
 
 app.get('/', function (req, res) {
-	var jFreshTag = '<!--JFRESH-->'
-		, indexTpl = fs.readFileSync(__dirname + '/public/start.html', 'utf-8')
-		, idxStart = indexTpl.indexOf(jFreshTag)
-		, tpls = fs.readdirSync(__dirname + '/tpls')
-		, data
-		, dataWrap
-		, ext
-	;
-	
+	var jFreshTag = '<!--JFRESH-->';
+	var indexTpl = fs.readFileSync(__dirname + '/public/start.html', 'utf-8');
+	var idxStart = indexTpl.indexOf(jFreshTag);
+	var tpls = fs.readdirSync(__dirname + '/tpls');
+	var data, dataWrap, ext;
+
 	res.set('Content-Type', 'text/html;charset=utf-8');
 	res.write( indexTpl.substr(0, idxStart) );
-	
+
 	for(var i=0; i<tpls.length; i++) {
 		ext = path.extname(tpls[i]);
 		if ( ext != '.html' ) continue;
-		
+
 		data = fs.readFileSync(__dirname + '/tpls/' + tpls[i]);
 		res.write(data);
-		
+
 		if (dataWrap) {
 			res.write(dataWrap);
 			dataWrap = false;
 		}
 	}
-	
+
 	res.write( indexTpl.substr(idxStart+jFreshTag.length) );
 	res.end();
 });
-/*
-app.get('/remote', function (req, res) {
-  res.sendfile(__dirname + '/public/remote.html');
-});
-
-app.get('/play/:video_id', function (req, res) {
-
-});
-*/
-
 
 //Socket.io Config
 io.set('log level', 1);
@@ -118,7 +104,6 @@ server.listen(app.get('port'), function(){
 });
 
 var ss;
-
 
 function uuid(
   a                  // placeholder
@@ -142,15 +127,6 @@ function uuid(
       )
 }
 
-//Run and pipe shell script output
-function run_shell(cmd, args, cb, end) {
-    var spawn = require('child_process').spawn,
-        child = spawn(cmd, args),
-        me = this;
-    child.stdout.on('data', function (buffer) { cb(me, buffer); });
-    child.stdout.on('end', end);
-}
-
 function on_user_login(socket,usr,uid) {
 	var env = process.env;
 	var cwd = process.cwd;
@@ -169,7 +145,7 @@ function on_user_login(socket,usr,uid) {
 		socket.emit('d', m);
 	});
 	socket.emit('sessionKey', {user: usr, key: uid});
-	
+
 	sessDb.serialize(function() {
 		var stmt = sessDb.prepare("insert or replace into sessions(key,user) values(?,?)");
 		stmt.run(uid, usr);
@@ -193,8 +169,7 @@ io.sockets.on('connection', function (socket) {
 	//we spawn a new child after socket login with user's crap and start routing from there...
 	var userid, uid;
 	console.log('New Websocket Connection started!');
-	//~ socket.emit('autherror', 'hello world');
-	
+
 	socket.on("login", function(usr,pwd) {
 		if ( userid ) return;
 		console.log('User login', usr);
@@ -224,85 +199,8 @@ io.sockets.on('connection', function (socket) {
   		}).wait(function() {
 				if ( !userid ) socket.emit('autherror', 'Failed to resume session');
 			});
-		
+
 	});
-	
 
 	return;
-	/*
-	socket.on("resize", function(data){
-		if ( !term ) return; //not yet open?
-		term.resize(data.cols, data.rows);
-	});
-	
-	socket.on("data", function(data){
-		if ( !term ) return; //not yet open?
-		term.write(data);
-	});
-	
-	socket.on("bash", function(data){
-		if ( term ) return; //already open?!
-		term =  pty.spawn('bash', [], {
-							name: 'xterm-color',
-							cols: 80,
-							rows: 30,
-							cwd: process.env.HOME,
-							env: process.env
-						});
-		term.on('data', function(data) {
-			socket.emit("data", data);
-		});
- });
-	
- socket.on("screen", function(data){
-   socket.type = "screen";
-   ss = socket;
-   console.log("Screen ready...");
- });
- socket.on("remote", function(data){
-   socket.type = "remote";
-   console.log("Remote ready...");
- });
-
- socket.on("controll", function(data){
-	console.log(data);
-   if(socket.type === "remote"){
-
-     if(data.action === "tap"){
-         if(ss != undefined){
-            ss.emit("controlling", {action:"enter"});
-            }
-     }
-     else if(data.action === "swipeLeft"){
-      if(ss != undefined){
-          ss.emit("controlling", {action:"goLeft"});
-          }
-     }
-     else if(data.action === "swipeRight"){
-       if(ss != undefined){
-           ss.emit("controlling", {action:"goRight"});
-           }
-     }
-   }
- });
-
- socket.on("video", function(data){
-
-    if( data.action === "play"){
-    var id = data.video_id,
-         url = "http://www.youtube.com/watch?v="+id;
-
-    var runShell = new run_shell('youtube-dl',['-o','%(id)s.%(ext)s','-f','/18/22',url],
-        function (me, buffer) {
-            me.stdout += buffer.toString();
-            socket.emit("loading",{output: me.stdout});
-            console.log(me.stdout);
-         },
-        function () {
-            //child = spawn('omxplayer',[id+'.mp4']);
-            omx.start(id+'.mp4');
-        });
-    }
-
- });*/
 });
