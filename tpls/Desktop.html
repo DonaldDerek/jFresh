@@ -6,14 +6,14 @@
   src: local('Roboto Regular'), local('Roboto-Regular'), url('../fonts/Y5yuUJGDLtmYv2_3fMB4fA.woff') format('woff');
 }
 @font-face {
-  font-family: 'Roboto';
-  font-style: normal;
+  font-family: 'Roboto-Medium';
+  font-style: bold;
   font-weight: 500;
   src: local('Roboto Medium'), local('Roboto-Medium'), url('../fonts/oHi30kwQWvpCWqAhzHcCSD8E0i7KZn-EPnyo3HZu7kw.woff') format('woff');
 }
 @font-face {
-  font-family: 'Roboto';
-  font-style: normal;
+  font-family: 'Roboto-Bold';
+  font-style: bolder;
   font-weight: 700;
   src: local('Roboto Bold'), local('Roboto-Bold'), url('../fonts/isZ-wbCXNKAbnjo6_TwHTj8E0i7KZn-EPnyo3HZu7kw.woff') format('woff');
 }
@@ -33,10 +33,10 @@ body {
 	self-align: stretch;
 	background-color: transparent;
 	overflow: hidden;
-	
+
 	font-family: 'Roboto';
 	color: #FFFFFF;
-	
+
 	display: flex;
 }
 
@@ -82,7 +82,7 @@ body {
 	animation-iteration-count: 1 !important;
 	-webkit-animation-timing-function: linear !important;
 	animation-timing-function: linear !important;
-	
+
 	box-shadow: 0 0 5px rgba(255, 0, 0, 1) !important;
 	border: 1px solid rgba(255, 0, 0, 1) !important;
 	display: block;
@@ -110,7 +110,7 @@ body {
 	align-self: stretch;
 	display: flex;
 	flex-flow: column nowrap;
-	
+
 	font-family: 'Roboto';
 	color: #FFFFFF;
 	-background: url('imgs/bg3.jpg') no-repeat fixed center center / cover transparent;
@@ -134,7 +134,7 @@ body {
 	display: flex;
 	flex-flow: column nwrap;
 	position: relative;
-	
+
 	justify-content: flex-start;
 	align-items: flex-start;
 
@@ -233,8 +233,25 @@ display: none;
 }
 
 .desktop-login-wrapper label>input {
-	width: 110px;
-	margin-bottom: 5px;
+	width: 150px;
+    margin-bottom: 12px;
+    height: 16px;
+    padding: 8px 12px;
+    font-size: 15px;
+    line-height: 1.467;
+    color: #34495e;
+    border: 2px solid #FFF;
+    border-radius: 6px;
+    box-shadow: none;
+    -webkit-transition: border .25s linear, color .25s linear, background-color .25s linear;
+    transition: border .25s linear, color .25s linear, background-color .25s linear;
+    outline: none;
+}
+.desktop-login-wrapper label>input:focus{
+    border-color: #000;
+}
+.desktop-login-wrapper label>input:hover{
+    border-color: #bdc3c7;
 }
 
 .desktop-login-wrapper label>span {
@@ -243,23 +260,47 @@ display: none;
 }
 
 .desktop-login-wrapper h1 {
-	margin-bottom: 10px;
-	border-bottom: 1px dashed #000;
-	width: 100%;
+	margin-bottom: 16px;
+    color:#000;
+    font-family: 'Roboto-Bold';
+    text-transform: uppercase;
+    width: 100%;
+    font-size: 21px
 }
 
 .desktop-login-wrapper input[type=submit] {
 	float: right;
-}
+    padding: 10px 15px;
+    font-size: 15px;
+    border: none;
+    border-radius: 4px;
+    -webkit-transition: border .25s linear, color .25s linear, background-color .25s linear;
+    transition: border .25s linear, color .25s linear, background-color .25s linear;
+    -webkit-font-smoothing: subpixel-antialiased;
+    font-family: 'Roboto-Bold';
+    color: #FEFEFE;
+    background: black;
+    outline:none;
+    cursor:pointer;
 
+}
+.desktop-login-wrapper input[type=submit]:hover{
+    -webkit-transition: border .60s linear, color .60s linear, background-color .60 linear;
+    transition: border .60 linear, color .60 linear, background-color .60 linear;
+    -webkit-font-smoothing: subpixel-antialiased;
+    opacity:0.8;
+    color:black;
+    background:white;
+}
 .desktop-login-wrapper .xLogin {
-	padding: 30px;
+	padding: 20px 40px;
 	align: auto;
-	background-color: rgba(255,255,255,0.75);
-	border-radius: 5px;
-	-box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.6);
-	box-shadow: 0 0 12px 1px rgba(164, 241, 136, 0.4);
-	color: #000;
+	background-color: rgba(127,140,141,0.7);
+	border-radius: 6px;
+	/*-box-shadow: 0 0 12px 1px rgba(0, 0, 0, 0.6);
+	box-shadow: 0 0 12px 1px rgba(164, 241, 136, 0.4);*/
+    border: 3px solid #000;
+	color: #ecf0f1;
 	-border: 5px solid #A4F188 rgba(164, 241, 136, 0.4);
 }
 
@@ -287,16 +328,16 @@ display: none;
 					<li class="i48" fn="WindowsListItem IconButton"></li>
 				</template>
 			</ul>
-			
+
 			<div fn="IconButton" class="i48 red-rabbit" onclick="var e = document.querySelector('.desktop-wrapper'); if (!e.makeItRain) e.makeItRain = new jFresh.fn.MakeItRain(e); this.hide();"></div>
 		</div>
-		
+
 		<div class="desktop-login-wrapper" fn="xLogin" xLogin-skt=".desktop-wrapper">
 			<form action="#">
-			<fieldset class="xLogin"><h1>You Shall Not Pass!</h1>
-				<label><span>Moo:</span><input type="text" name="username"></label><br>
-				<label><span>Foo:</span><input type="password" name="password"></label><br>
-				<input type="submit" value="Try!">
+			<fieldset class="xLogin"><h1>XTC Login</h1>
+				<label><input type="text" name="username" placeholder="user-id"></label><br>
+				<label><input type="password" name="password" placeholder="password"></label><br>
+				<input type="submit" value="\n">
 			</fieldset>
 			</form>
 		</di>
@@ -312,7 +353,7 @@ jFresh.fn.xLogin = function(el, opts) {
 	var me = this;
 	this.el = el;
 	this.opts = opts;
-	
+
 	var frm = this.el.getElementsByTagName('form')[0];
 	frm.onsubmit = function() {
 		var user, pwd, validate_frm = function() {
@@ -320,7 +361,7 @@ jFresh.fn.xLogin = function(el, opts) {
 			pwd = frm.querySelector('input[type=password]').value;
 			return user.length && pwd.length;
 		};
-	
+
 		if ( !validate_frm() ) {
 			me.el.querySelector('fieldset').animateClass('shake');
 		}
